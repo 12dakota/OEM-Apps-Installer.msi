@@ -33,6 +33,9 @@ jobs:
       - name: Publish extract custom action
         run: dotnet publish msi/ExtractToWindowsApps.csproj -c Release -o msi/out-ca
 
+      - name: Publish installer window
+        run: dotnet publish ui/InstallerWindow.csproj -c Release -o usb
+
       - name: Install WiX
         run: dotnet tool install --global wix --version 5.0.2
 
@@ -50,6 +53,7 @@ jobs:
           name: OEM-Apps-Installer-usb
           path: |
             usb/OEM-Apps-Installer.msi
+            usb/OEMAppsInstallerUI.exe
             usb/Install-from-USB.cmd
             usb/autorun.inf
 
