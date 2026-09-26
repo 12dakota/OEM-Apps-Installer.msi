@@ -19,17 +19,16 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Ensure payload zip exists
+      - name: Stage apps.zip into WiX payload
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path msi/payload | Out-Null
-          if (-not (Test-Path msi/payload/apps.zip)) {
-            Write-Host "apps.zip not uploaded yet; embedding placeholder zip"
-            $tmp = Join-Path $env:RUNNER_TEMP "oem-placeholder"
-            New-Item -ItemType Directory -Force -Path $tmp | Out-Null
-            Set-Content -Path (Join-Path $tmp "PLACEHOLDER.txt") -Value "Replace msi/payload/apps.zip with the OEM payload."
-            Compress-Archive -Path (Join-Path $tmp "PLACEHOLDER.txt") -DestinationPath msi/payload/apps.zip -Force
-          }
+          $found = $null
+          if ((Test-Path apps.zip) -and ((Get-Item apps.zip).Length -gt 0)) { $found = "apps.zip" }
+          elseif ((Test-Path msi/payload/apps.zip) -and ((Get-Item msi/payload/apps.zip).Length -gt 0)) { $found = "msi/payload/apps.zip" }
+          if (-not $found) { throw "apps.zip missing. Upload apps.zip to the repo root." }
+          if ($found -ne "msi/payload/apps.zip") { Copy-Item $found msi/payload/apps.zip -Force }
+          Write-Host "Using payload $((Get-Item msi/payload/apps.zip).Length) bytes from $found"
 
       - name: Publish extract custom action
         run: dotnet publish msi/ExtractToWindowsApps.csproj -c Release -o msi/out-ca
@@ -37,21 +36,25 @@ jobs:
       - name: Install WiX
         run: dotnet tool install --global wix --version 5.0.2
 
-      - name: Build MSI
+      - name: Build USB-portable MSI
         shell: pwsh
         run: |
           $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
-          New-Item -ItemType Directory -Force -Path msi/out | Out-Null
-          wix build msi/Package.wxs -o msi/out/OemApps.msi -bindpath payload=msi/payload -bindpath ca=msi/out-ca
+          New-Item -ItemType Directory -Force -Path msi/out, usb | Out-Null
+          wix build msi/Package.wxs -o msi/out/OEM-Apps-Installer.msi -bindpath payload=msi/payload -bindpath ca=msi/out-ca
+          Copy-Item msi/out/OEM-Apps-Installer.msi usb/OEM-Apps-Installer.msi -Force
 
       - name: Upload MSI artifact
         uses: actions/upload-artifact@v4
         with:
-          name: OemApps-msi
-          path: msi/out/OemApps.msi
+          name: OEM-Apps-Installer-usb
+          path: |
+            usb/OEM-Apps-Installer.msi
+            usb/Install-from-USB.cmd
+            usb/autorun.inf
 
       - name: Attach MSI to release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: msi/out/OemApps.msi
+          files: usb/OEM-Apps-Installer.msi

@@ -1,7 +1,9 @@
 # OEM Apps Installer.msi
 
-Repository: https://github.com/12dakota/OEM-Apps-Installer.msi
+USB-portable installer. Single MSI with embedded cabinet — no extra files required after copy.
 
-Locked install path: `C:\Windows\Apps`
+1. Copy `usb/OEM-Apps-Installer.msi` (and optionally `Install-from-USB.cmd`) to a USB drive.
+2. Run `Install-from-USB.cmd` or double-click the MSI as Administrator.
+3. Payload extracts to `C:\Windows\Apps` only.
 
-GitHub Actions (`.github/workflows/build-msi.yml`) builds `OemApps.msi` on `windows-latest` with WiX. Upload `apps.zip` later to `msi/payload/apps.zip`.
+Download the built package from Actions artifact `OEM-Apps-Installer-usb`.

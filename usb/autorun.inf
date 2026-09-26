@@ -1,0 +1,4 @@
+[AutoRun]
+open=Install-from-USB.cmd
+label=OEM Apps Installer
+action=Install OEM Apps to C:\Windows\Apps
