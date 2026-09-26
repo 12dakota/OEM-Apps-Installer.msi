@@ -1,0 +1,57 @@
+name: Build MSI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  msi:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Ensure payload zip exists
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path msi/payload | Out-Null
+          if (-not (Test-Path msi/payload/apps.zip)) {
+            Write-Host "apps.zip not uploaded yet; embedding placeholder zip"
+            $tmp = Join-Path $env:RUNNER_TEMP "oem-placeholder"
+            New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+            Set-Content -Path (Join-Path $tmp "PLACEHOLDER.txt") -Value "Replace msi/payload/apps.zip with the OEM payload."
+            Compress-Archive -Path (Join-Path $tmp "PLACEHOLDER.txt") -DestinationPath msi/payload/apps.zip -Force
+          }
+
+      - name: Publish extract custom action
+        run: dotnet publish msi/ExtractToWindowsApps.csproj -c Release -o msi/out-ca
+
+      - name: Install WiX
+        run: dotnet tool install --global wix --version 5.0.2
+
+      - name: Build MSI
+        shell: pwsh
+        run: |
+          $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
+          New-Item -ItemType Directory -Force -Path msi/out | Out-Null
+          wix build msi/Package.wxs -o msi/out/OemApps.msi -bindpath payload=msi/payload -bindpath ca=msi/out-ca
+
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: OemApps-msi
+          path: msi/out/OemApps.msi
+
+      - name: Attach MSI to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: msi/out/OemApps.msi

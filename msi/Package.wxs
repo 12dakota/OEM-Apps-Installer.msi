@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+      Name="OEM Apps"
+      Manufacturer="OEM"
+      Version="1.0.0.0"
+      UpgradeCode="A7C3E91B-4D2F-4B18-9E55-0C8F2A1B6D44"
+      Scope="perMachine"
+      Compressed="yes">
+
+    <SummaryInformation Description="OEM Apps to C:\Windows\Apps" />
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- No WixUI / no INSTALLDIR browse. Target is WindowsFolder\Apps only. -->
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+    <Property Id="ARPSYSTEMCOMPONENT" Value="0" />
+    <Property Id="MSIFASTINSTALL" Value="7" />
+    <Property Id="APPSDIR" Value="C:\Windows\Apps" />
+
+    <StandardDirectory Id="WindowsFolder">
+      <Directory Id="APPSDIR" Name="Apps" />
+    </StandardDirectory>
+
+    <ComponentGroup Id="Payload" Directory="APPSDIR">
+      <Component Id="AppsZip" Guid="B1E82C04-9A77-4F31-8C6D-3E1A0B9F5C21">
+        <File Id="AppsZipFile" Source="!(bindpath.payload)\apps.zip" Name="apps.zip" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <Binary Id="ExtractCA" SourceFile="!(bindpath.ca)\ExtractToWindowsApps.exe" />
+
+    <CustomAction
+        Id="ExtractAppsZip"
+        BinaryRef="ExtractCA"
+        ExeCommand=""
+        Execute="deferred"
+        Impersonate="no"
+        Return="check" />
+
+    <InstallExecuteSequence>
+      <Custom Action="ExtractAppsZip" After="InstallFiles" Condition="NOT Installed" />
+    </InstallExecuteSequence>
+
+    <Feature Id="Main" Title="OEM Apps" Level="1" AllowAbsent="no" AllowAdvertise="no">
+      <ComponentGroupRef Id="Payload" />
+    </Feature>
+  </Package>
+</Wix>
