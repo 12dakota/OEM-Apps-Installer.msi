@@ -7,3 +7,19 @@ USB-portable installer. Single MSI with embedded cabinet — no extra files requ
 3. Payload extracts to `C:\Windows\Apps` only.
 
 Download the built package from Actions artifact `OEM-Apps-Installer-usb`.
+
+## Remote install (any PC with internet)
+
+Administrator PowerShell:
+
+```powershell
+irm https://github.com/12dakota/OEM-Apps-Installer.msi/releases/latest/download/install.ps1 | iex
+```
+
+CMD:
+
+```bat
+curl -L -o %TEMP%\oem-install.cmd https://github.com/12dakota/OEM-Apps-Installer.msi/releases/latest/download/install.cmd && %TEMP%\oem-install.cmd
+```
+
+That downloads the MSI from the `latest` GitHub Release and starts it. To host on your own server instead, copy `remote/install.ps1` plus `OEM-Apps-Installer.msi` to any HTTPS folder and change `$ReleaseBase` in the script.

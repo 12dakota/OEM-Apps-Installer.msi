@@ -57,8 +57,24 @@ jobs:
             usb/Install-from-USB.cmd
             usb/autorun.inf
 
-      - name: Attach MSI to release
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Publish rolling release for remote install
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
-          files: usb/OEM-Apps-Installer.msi
+          tag_name: latest
+          name: OEM Apps Installer
+          body: |
+            Remote install (Administrator PowerShell):
+
+            irm https://github.com/12dakota/OEM-Apps-Installer.msi/releases/latest/download/install.ps1 | iex
+
+            Or CMD:
+
+            curl -L -o install.cmd https://github.com/12dakota/OEM-Apps-Installer.msi/releases/latest/download/install.cmd && install.cmd
+          files: |
+            usb/OEM-Apps-Installer.msi
+            usb/OEMAppsInstallerUI.exe
+            usb/Install-from-USB.cmd
+            remote/install.ps1
+            remote/install.cmd
+          allowUpdates: true
